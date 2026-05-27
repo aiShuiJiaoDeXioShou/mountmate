@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "displayName": "CompanyDisk",
+  "server": "192.168.77.174",
+  "share": "CompanyDisk",
+  "domain": "",
+  "username": "yaoyelan",
+  "password": "REPLACE_BEFORE_IMPORT",
+  "defaultDriveLetter": "Z",
+  "mountName": "CompanyDisk"
+}
