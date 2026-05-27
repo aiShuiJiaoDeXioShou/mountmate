@@ -17,6 +17,7 @@ import {
   Unplug,
   XCircle,
 } from "lucide-react";
+import mountmateIcon from "./assets/mountmate-icon.png";
 import "./App.css";
 
 type Profile = {
@@ -253,7 +254,7 @@ function App() {
       <section className="topbar">
         <div className="brand-block">
           <div className="brand-mark">
-            <HardDrive size={22} />
+            <img src={mountmateIcon} alt="" />
           </div>
           <div>
             <h1>MountMate</h1>

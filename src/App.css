@@ -60,10 +60,16 @@ button {
   width: 42px;
   height: 42px;
   place-items: center;
-  color: #f7fbf8;
-  background: #1d6f5a;
+  overflow: hidden;
+  background: #0f664f;
   border-radius: 8px;
   box-shadow: 0 8px 22px rgba(29, 111, 90, 0.24);
+}
+
+.brand-mark img {
+  width: 42px;
+  height: 42px;
+  object-fit: cover;
 }
 
 h1,
