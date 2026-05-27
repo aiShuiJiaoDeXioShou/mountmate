@@ -25,7 +25,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -52,24 +53,24 @@ button {
 .brand-block {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .brand-mark {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 64px;
+  height: 64px;
   place-items: center;
   overflow: visible;
   background: transparent;
 }
 
 .brand-mark img {
-  width: 42px;
-  height: 42px;
+  width: 64px;
+  height: 64px;
   display: block;
   object-fit: contain;
-  filter: drop-shadow(0 8px 18px rgba(29, 111, 90, 0.22));
+  filter: drop-shadow(0 10px 22px rgba(29, 111, 90, 0.2));
 }
 
 h1,
@@ -155,6 +156,37 @@ h2 {
   flex-wrap: wrap;
   gap: 8px;
   align-self: end;
+}
+
+.config-paste {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-height: 118px;
+  resize: vertical;
+  padding: 11px 12px;
+  color: #1b2822;
+  background: #f8fbf8;
+  border: 1px solid rgba(39, 63, 54, 0.12);
+  border-radius: 8px;
+  outline: 0;
+  font-family:
+    "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.config-paste::placeholder {
+  color: #8c9993;
+}
+
+.config-paste:focus {
+  background: #ffffff;
+  border-color: rgba(29, 111, 90, 0.48);
+  box-shadow: 0 0 0 3px rgba(29, 111, 90, 0.12);
 }
 
 .hidden-input {
@@ -521,6 +553,12 @@ h2 {
   .topbar {
     align-items: flex-start;
     gap: 12px;
+  }
+
+  .brand-mark,
+  .brand-mark img {
+    width: 54px;
+    height: 54px;
   }
 
   .facts-grid,

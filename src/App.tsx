@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
 import {
   Activity,
   AlertTriangle,
   CheckCircle2,
+  ClipboardPaste,
   FolderOpen,
   Gauge,
   HardDrive,
@@ -84,6 +84,7 @@ function App() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<BusyAction>("load");
   const [isDragging, setIsDragging] = useState(false);
+  const [pastedConfig, setPastedConfig] = useState("");
 
   const selectedProfile = useMemo(
     () => profiles.find((profile) => profile.id === selectedId) ?? profiles[0],
@@ -114,21 +115,12 @@ function App() {
     }
   }
 
-  async function importFromDialog() {
+  async function importFromBrowserFile(file: File) {
     setBusy("import");
     setError("");
     try {
-      const selected = await open({
-        multiple: false,
-        filters: [{ name: "MountMate JSON", extensions: ["json"] }],
-      });
-      if (!selected || Array.isArray(selected)) {
-        return;
-      }
-      const profile = await callCommand<Profile>("import_config", {
-        file: selected,
-      });
-      await refreshProfilesAfterImport(profile);
+      const contents = await file.text();
+      await importConfigSource(contents);
     } catch (err) {
       setError(readError(err));
     } finally {
@@ -136,20 +128,30 @@ function App() {
     }
   }
 
-  async function importFromBrowserFile(file: File) {
+  async function importFromPastedConfig() {
+    const contents = pastedConfig.trim();
+    if (!contents) {
+      setError("请先粘贴 JSON 配置。");
+      return;
+    }
+
     setBusy("import");
     setError("");
     try {
-      const contents = await file.text();
-      const profile = await callCommand<Profile>("import_config", {
-        file: contents,
-      });
-      await refreshProfilesAfterImport(profile);
+      await importConfigSource(contents);
+      setPastedConfig("");
     } catch (err) {
       setError(readError(err));
     } finally {
       setBusy(null);
     }
+  }
+
+  async function importConfigSource(contents: string) {
+    const profile = await callCommand<Profile>("import_config", {
+      file: contents,
+    });
+    await refreshProfilesAfterImport(profile);
   }
 
   async function refreshProfilesAfterImport(profile: Profile) {
@@ -299,8 +301,14 @@ function App() {
             <Import size={20} />
             <div>
               <strong>导入配置包</strong>
-              <span>JSON 内的明文密码只用于导入，之后转存到系统安全存储。</span>
             </div>
+            <textarea
+              className="config-paste"
+              value={pastedConfig}
+              placeholder="粘贴 JSON 配置"
+              spellCheck={false}
+              onChange={(event) => setPastedConfig(event.currentTarget.value)}
+            />
             <div className="import-actions">
               <button
                 type="button"
@@ -314,11 +322,11 @@ function App() {
               <button
                 type="button"
                 className="secondary-button"
-                disabled={busy !== null}
-                onClick={() => void importFromDialog()}
+                disabled={busy !== null || !pastedConfig.trim()}
+                onClick={() => void importFromPastedConfig()}
               >
-                <FolderOpen size={16} />
-                从系统打开
+                <ClipboardPaste size={16} />
+                导入粘贴内容
               </button>
             </div>
           </div>
@@ -618,7 +626,7 @@ async function previewCommand<T>(command: string, args?: CommandArgs): Promise<T
     case "import_config": {
       const file = String(args?.file ?? "");
       if (!file.trimStart().startsWith("{")) {
-        throw new Error("浏览器预览不能读取系统路径，请拖入 JSON 文件。");
+        throw new Error("浏览器预览不能读取系统路径，请拖入或粘贴 JSON 配置。");
       }
       const config = JSON.parse(file) as {
         displayName: string;
