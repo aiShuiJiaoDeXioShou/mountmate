@@ -146,42 +146,43 @@ fn to_command_result<T>(result: AppResult<T>) -> CommandResult<T> {
 }
 
 #[tauri::command]
-fn import_config(app: AppHandle, file: String) -> CommandResult<ProfileView> {
-    to_command_result(import_config_inner(&app, &file))
+async fn import_config(app: AppHandle, file: String) -> CommandResult<ProfileView> {
+    run_blocking(move || import_config_inner(&app, &file)).await
 }
 
 #[tauri::command]
-fn list_profiles(app: AppHandle) -> CommandResult<Vec<ProfileView>> {
-    to_command_result(load_store(&app).and_then(|store| profiles_to_views(store.profiles)))
+async fn list_profiles(app: AppHandle) -> CommandResult<Vec<ProfileView>> {
+    run_blocking(move || load_store(&app).and_then(|store| profiles_to_views(store.profiles))).await
 }
 
 #[tauri::command]
-fn mount_profile(app: AppHandle, profile_id: String) -> CommandResult<ProfileView> {
-    to_command_result(with_profile(&app, &profile_id, |profile| {
+async fn mount_profile(app: AppHandle, profile_id: String) -> CommandResult<ProfileView> {
+    run_blocking(move || with_profile(&app, &profile_id, |profile| {
         let password = get_password(profile)?;
         platform::mount(profile, &password)?;
         profile_to_view(profile)
     }))
+    .await
 }
 
 #[tauri::command]
-fn unmount_profile(app: AppHandle, profile_id: String) -> CommandResult<ProfileView> {
-    to_command_result(with_profile(&app, &profile_id, |profile| {
+async fn unmount_profile(app: AppHandle, profile_id: String) -> CommandResult<ProfileView> {
+    run_blocking(move || with_profile(&app, &profile_id, |profile| {
         platform::unmount(profile)?;
         profile_to_view(profile)
     }))
+    .await
 }
 
 #[tauri::command]
-fn open_mount(app: AppHandle, profile_id: String) -> CommandResult<()> {
-    to_command_result(with_profile(&app, &profile_id, |profile| {
-        platform::open_mount(profile)
-    }))
+async fn open_mount(app: AppHandle, profile_id: String) -> CommandResult<()> {
+    run_blocking(move || with_profile(&app, &profile_id, |profile| platform::open_mount(profile)))
+        .await
 }
 
 #[tauri::command]
-fn test_connection(app: AppHandle, profile_id: String) -> CommandResult<DiagnosticResult> {
-    to_command_result(with_profile(&app, &profile_id, |profile| {
+async fn test_connection(app: AppHandle, profile_id: String) -> CommandResult<DiagnosticResult> {
+    run_blocking(move || with_profile(&app, &profile_id, |profile| {
         let mut checks = Vec::new();
         let mut suggestions = Vec::new();
 
@@ -248,13 +249,24 @@ fn test_connection(app: AppHandle, profile_id: String) -> CommandResult<Diagnost
             suggestions,
         })
     }))
+    .await
 }
 
 #[tauri::command]
-fn benchmark(app: AppHandle, profile_id: String) -> CommandResult<BenchmarkResult> {
-    to_command_result(with_profile(&app, &profile_id, |profile| {
-        benchmark_inner(profile)
-    }))
+async fn benchmark(app: AppHandle, profile_id: String) -> CommandResult<BenchmarkResult> {
+    run_blocking(move || with_profile(&app, &profile_id, |profile| benchmark_inner(profile))).await
+}
+
+async fn run_blocking<T>(
+    task: impl FnOnce() -> AppResult<T> + Send + 'static,
+) -> CommandResult<T>
+where
+    T: Send + 'static,
+{
+    match tauri::async_runtime::spawn_blocking(task).await {
+        Ok(result) => to_command_result(result),
+        Err(error) => Err(format!("后台任务执行失败：{error}")),
+    }
 }
 
 fn import_config_inner(app: &AppHandle, source: &str) -> AppResult<ProfileView> {
