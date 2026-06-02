@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local Apple signing materials; never commit private keys or certificates.
+apple-signing/
+*.p12
+*.certSigningRequest
